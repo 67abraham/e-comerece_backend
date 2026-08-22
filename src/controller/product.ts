@@ -6,19 +6,19 @@ import { ProductStatus } from "../../generated/prisma/enums";
 
 export const createProd = async(req:Request, res:Response)=>{
     try {
-        const {name, catId, imagUlr, price, location, moq, des} = req.body
+        const {name, categoryId, imageUrl, price, productLocation, minimumOrder, description} = req.body
 
-        if(!name || !catId || !price) return res.status(400).json({message: "All Field is Required"});
+        if(!name || !categoryId || !price) return res.status(400).json({message: "All Field is Required"});
 
         const createProd = await prisma.product.create({
             data:{
                 name,
-                categoryId: catId,
-                imageUrl : imagUlr,
+                categoryId,
+                imageUrl,
                 price,
-                description: des,
-                minimumOrder: moq,
-                productLocation: location
+                description,
+                minimumOrder,
+                productLocation
             }
         })
 
@@ -37,20 +37,20 @@ export const createProd = async(req:Request, res:Response)=>{
 export const updateProduct =async(req:Request, res:Response)=>{
     try {
         const {id}=req.body as {id:string}
-        const {name, catId, imagUlr, price, location, moq, des} = req.body
+        const {name, categoryId, imageUrl, price, productLocation, minimumOrder, description} = req.body
 
-        if(!name || !catId || !price) return res.status(400).json({message: "All Field is Required"});
+        if(!name || !categoryId || !price) return res.status(400).json({message: "All Field is Required"});
 
         const createProd = await prisma.product.update({
             where:{id},
             data:{
                 name,
-                categoryId: catId,
-                imageUrl : imagUlr,
+                categoryId,
+                imageUrl,
                 price,
-                description: des,
-                minimumOrder: moq,
-                productLocation: location
+                description,
+                minimumOrder,
+                productLocation
             }
         })
 
@@ -66,12 +66,12 @@ export const updateProduct =async(req:Request, res:Response)=>{
 export const updateProdStatus = async(req:Request, res:Response)=>{
     try {
         const {id} = req.params as {id:string}
-        const {stat} = req.query.status as any
+        const {status} = req.query.status as any
 
         const changeStatus = await prisma.product.update({
             where:{id},
             data:{
-                status: stat
+                status
             }
         })
         
@@ -155,7 +155,7 @@ export const getSingleProd = async(req:Request, res:Response)=>{
         })
 
         logger.info("Get Single Prod Detail")
-        res.status(200).json({...getProd})
+        res.status(200).json(getProd)
         
     } catch (error) {
        logger.error(`Error: ${error}`) 
