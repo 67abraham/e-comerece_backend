@@ -104,6 +104,7 @@ model Product{
 	productLocation String 
 
 	comment Comment[]
+	cartItem CartItem[]
 }
 
 model Comment{
@@ -111,7 +112,7 @@ model Comment{
 	userId String @db.ObjectId
 	productId String @db.ObjectId
 	message Json
-	createAt DateTime
+	createAt DateTime @default(now())
 
 	user User @relation(fields: [userId], references: [id])
 	product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -133,6 +134,7 @@ model Order{
 	status OrderStatus @default(PENDING)
 	quantity Int
 	userId String @db.ObjectId
+	createAt DateTime @default(now())
 
 
 }
@@ -142,9 +144,10 @@ model CartItem{
 	userId String @db.ObjectId
 	productId String @db.ObjectId
 	quantity Int
-	createAt DateTime
+	createAt DateTime @default(now())
 
 	user User @relation(fields: [userId], references: [id])
+	product Product @relation(fields: [productId], references: [id])
 
 }
 

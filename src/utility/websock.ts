@@ -23,9 +23,5 @@ export const broadcastMessage =({event, data}:{event:string, data:unknown})=>{
             client.send(payload)
         }
     }
-   
-
-    
-
 
 }

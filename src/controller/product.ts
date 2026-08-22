@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import { logger } from "../../lib/logger";
 import { prisma } from "../../lib/prisma";
 import { broadcastMessage } from "../utility/websock";
-import { sendEmail } from "../../lib/sendEmail";
 import { ProductStatus } from "../../generated/prisma/enums";
 
 export const createProd = async(req:Request, res:Response)=>{
@@ -75,9 +74,7 @@ export const updateProdStatus = async(req:Request, res:Response)=>{
                 status: stat
             }
         })
-        // const message= " Hi ! \n "
         
-        // await sendEmail({to:(req as any).user.email, subject:"Order Status",message:""} )
         logger.info("Update Product Status")
         res.status(200).json({message:"Update Successful"})
 
