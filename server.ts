@@ -8,12 +8,17 @@ import cookieParser from 'cookie-parser'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './lib/auth'
 import { category } from './src/routes/route'
+import { createServer } from 'http'
+import { initialWebsocket } from './src/utility/websock'
 
 
 dotenv.config();
 
 const app:Application = express();
+const server = createServer(app)
 const PORT=8000
+
+initialWebsocket(server)
 //middleware
 app.use(cors({
     origin:process.env.CLIENT_ROUTE || "http://localhost:5173",

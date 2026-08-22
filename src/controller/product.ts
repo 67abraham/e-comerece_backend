@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
 import { logger } from "../../lib/logger";
 import { prisma } from "../../lib/prisma";
+import { broadcastMessage } from "../utility/websock";
+import { sendEmail } from "../../lib/sendEmail";
+import { ProductStatus } from "../../generated/prisma/enums";
 
 export const createProd = async(req:Request, res:Response)=>{
     try {
@@ -21,7 +24,7 @@ export const createProd = async(req:Request, res:Response)=>{
         })
 
         logger.info(`Product Create: ${createProd.name}`)
-
+        broadcastMessage({event:"create:product", data: createProd})
         res.status(201).json(createProd)
 
     } catch (error) {
@@ -29,4 +32,135 @@ export const createProd = async(req:Request, res:Response)=>{
         
     }
 
+}
+
+
+export const updateProduct =async(req:Request, res:Response)=>{
+    try {
+        const {id}=req.body as {id:string}
+        const {name, catId, imagUlr, price, location, moq, des} = req.body
+
+        if(!name || !catId || !price) return res.status(400).json({message: "All Field is Required"});
+
+        const createProd = await prisma.product.update({
+            where:{id},
+            data:{
+                name,
+                categoryId: catId,
+                imageUrl : imagUlr,
+                price,
+                description: des,
+                minimumOrder: moq,
+                productLocation: location
+            }
+        })
+
+        logger.info("Update Product")
+        res.status(200).json({message:"Update Successful"})
+
+        
+    } catch (error) {
+         logger.error(`Error: ${error}`)
+    }
+}
+
+export const updateProdStatus = async(req:Request, res:Response)=>{
+    try {
+        const {id} = req.params as {id:string}
+        const {stat} = req.query.status as any
+
+        const changeStatus = await prisma.product.update({
+            where:{id},
+            data:{
+                status: stat
+            }
+        })
+        // const message= " Hi ! \n "
+        
+        // await sendEmail({to:(req as any).user.email, subject:"Order Status",message:""} )
+        logger.info("Update Product Status")
+        res.status(200).json({message:"Update Successful"})
+
+    } catch (error) {
+        logger.error(`Error: ${error}`)
+    }
+}
+
+export const delProd =  async(req:Request, res:Response)=>{
+    try {
+        const {id}= req.params as {id:string}
+
+        const del = await prisma.product.delete({
+            where:{id}
+        })
+    
+        logger.info("Delete Product")
+        res.status(200).json({message:"Deleted Successful"})
+
+    } catch (error) {
+        logger.error(`Error: ${error}`)
+    }
+}
+
+export const getProduct =async(req:Request, res:Response)=>{
+    try {
+        const page = Math.max(1, Number((req.query.page as string)) || 1);
+        const limit = Math.max(1, Number((req.query.limit as string))|| 10);
+
+        const skip = (page-1)*limit;
+
+        const available = (req as any).user.role === "ADMIN" ? undefined: ProductStatus.AVAILABLE
+
+        const [getAllProd, totalProduct] = await Promise.all([ prisma.product.findMany({
+            skip,
+            take: limit,
+            orderBy:{
+                name: "asc"
+            }
+        }), prisma.product.count({where:{status:available}})])
+
+        const totalPage = Math.ceil(totalProduct / limit);
+
+        logger.info("Delete Product")
+        res.status(200).json({
+            getAllProd,
+            totalPage,
+            skip,
+            hasNextPage: page < totalPage,
+            hasPrevPage: page > 1
+        })
+
+
+    } catch (error) {
+        logger.error(`Error: ${error}`)
+
+    }
+}
+
+
+
+export const getSingleProd = async(req:Request, res:Response)=>{
+    try {
+
+        const {id}=req.params as {id:string}
+
+        const getProd = await prisma.product.findUnique({
+            where:{id},
+            include:{
+                comment:{
+                    include:{
+                        user:{
+                            select:{name:true, image:true,}
+                        }
+                    }
+                }
+            }
+        })
+
+        logger.info("Get Single Prod Detail")
+        res.status(200).json({...getProd})
+        
+    } catch (error) {
+       logger.error(`Error: ${error}`) 
+    }
 }

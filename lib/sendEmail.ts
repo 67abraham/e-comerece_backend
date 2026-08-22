@@ -1,3 +1,3 @@
-export const sendEmail = ({to, subject, message}:{to:string, subject:string, message:string})=>{
+export const sendEmail = async({to, subject, message}:{to:string, subject:string, message:string})=>{
 
 }

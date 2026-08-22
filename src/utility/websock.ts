@@ -5,6 +5,7 @@ import {Server}  from "http";
 const clients = new Set<WebSocket>()
 let wss: WebSocketServer
 
+
 export const initialWebsocket = (server:Server)=>{
     wss = new  WebSocketServer({server})
 
@@ -16,11 +17,11 @@ export const initialWebsocket = (server:Server)=>{
 }
 
 export const broadcastMessage =({event, data}:{event:string, data:unknown})=>{
-
-
     const payload = JSON.stringify({event, data})
     for(const client of clients){
-        clients
+        if(client.readyState === WebSocket.OPEN){
+            client.send(payload)
+        }
     }
    
 
