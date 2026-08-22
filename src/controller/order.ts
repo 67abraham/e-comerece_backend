@@ -125,7 +125,7 @@ export const updateOrder = async(req:Request, res:Response)=>{
         })
 
         logger.info("Update OrderStatus")
-        res.status(200).json(updateO)
+        res.status(200).json({message: "Update Successful"})
     } catch (error) {
         logger.error(`Error: ${error}`)        
     }
