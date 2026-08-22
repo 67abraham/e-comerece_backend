@@ -60,12 +60,14 @@ export const getCartItem =  async(req:Request, res:Response)=>{
                     product: true
                    }
                 }), prisma.cartItem.count({where:{userId: (req as any).user.id}})])
-        
+
+                const totalPrice = getAllCart.reduce((sum, item)=> sum + (item.product.price * item.quantity), 0)
                 const totalPage = Math.ceil(totalCart / limit);
         
                 logger.info("Delete Product")
                 res.status(200).json({
                     getAllCart,
+                    totalPrice,
                     totalPage,
                     skip,
                     hasNextPage: page < totalPage,

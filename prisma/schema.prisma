@@ -100,11 +100,12 @@ model Product{
 	status ProductStatus @default(AVAILABLE)
 	description Json?
 	createAt DateTime @default(now())
-	minimumOrder Int @default(0)
+	minimumOrder Int @default(1)
 	productLocation String 
 
 	comment Comment[]
 	cartItem CartItem[]
+	order Order[]
 }
 
 model Comment{
@@ -122,6 +123,7 @@ model Comment{
 enum OrderStatus {
   PENDING
   PAID
+  PREPARING
   SHIPPED
   DELIVERED
   CANCELLED
@@ -129,13 +131,15 @@ enum OrderStatus {
 
 model Order{
 	id String @id @default(auto()) @map("_id") @db.ObjectId
-	orderNumber Int
-	productId String @db.ObjectId
+	orderNumber String
+	productId String[] @db.ObjectId
 	status OrderStatus @default(PENDING)
-	quantity Int
+	item CartItem[]
+	totalAmount Int
 	userId String @db.ObjectId
 	createAt DateTime @default(now())
-
+	
+	product Product @relation(fields: [productId], references: [id])
 
 }
 
@@ -144,10 +148,12 @@ model CartItem{
 	userId String @db.ObjectId
 	productId String @db.ObjectId
 	quantity Int
+	orderId String? @db.ObjectId
 	createAt DateTime @default(now())
 
 	user User @relation(fields: [userId], references: [id])
 	product Product @relation(fields: [productId], references: [id])
+	order Order? @relation(fields: [orderId], references: [id])
 
 }
 
