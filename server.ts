@@ -7,7 +7,7 @@ import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './lib/auth'
-import { category, product } from './src/routes/route'
+import { cartItem, category, order, product } from './src/routes/route'
 import { createServer } from 'http'
 import { initialWebsocket } from './src/utility/websock'
 
@@ -46,6 +46,8 @@ if(process.env.NODE_ENV === 'development'){
 //app route
 app.use("/api/category", category)
 app.use("/api/product", product)
+app.use("/api/cartItem", cartItem)
+app.use("/api/order", order)
 
 //global error
 app.use((err:Error, req: Request, res:Response)=>{

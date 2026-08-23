@@ -5,21 +5,23 @@ import { broadcastMessage } from "../utility/websock";
 
 export const createCartItem= async(req:Request, res:Response)=>{
     try {
-        const {prodId, qty}= req.body
+        const {productId, quantity}= req.body
 
-        if(!prodId || !qty) return res.status(400).json({message: "All Field Required"});
+        if(!productId || !quantity) return res.status(400).json({message: "All Field Required"});
 
         const createCart = await prisma.cartItem.create({
             data:{
                 userId: (req as any).user.id,
-                productId: prodId,
-                quantity: qty
+                productId,
+                quantity
 
             }
         })
 
         logger.info("CartItem Created")
         broadcastMessage({event: "create:cartItem", data:createCart})
+        //remove later 
+        res.status(201).json(createCart)
 
     } catch (error) {
         logger.error(`Error:${error}`)
@@ -35,7 +37,7 @@ export const delCartItem =  async(req:Request, res:Response)=>{
         })
 
         logger.info("CartItem Deleted")
-        res.status(200).json({message: "Deleted Successful"})
+        res.status(200).send("Deleted Successful")
         
     } catch (error) {
         logger.error(`Error:${error}`)
