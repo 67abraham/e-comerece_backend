@@ -3,6 +3,8 @@ import { logger } from "../../lib/logger";
 import { prisma } from "../../lib/prisma";
 import { broadcastMessage } from "../utility/websock";
 import { ProductStatus } from "../../generated/prisma/enums";
+import { auth } from "../../lib/auth";
+import { fromNodeHeaders } from "better-auth/node";
 
 export const createProd = async(req:Request, res:Response)=>{
     try {
@@ -66,7 +68,8 @@ export const updateProduct =async(req:Request, res:Response)=>{
 export const updateProdStatus = async(req:Request, res:Response)=>{
     try {
         const {id} = req.params as {id:string}
-        const {status} = req.query.status as any
+        const status = req.query.status as ProductStatus
+        logger.info(`Status: ${status}`)
 
         const changeStatus = await prisma.product.update({
             where:{id},
@@ -76,7 +79,7 @@ export const updateProdStatus = async(req:Request, res:Response)=>{
         })
         
         logger.info("Update Product Status")
-        res.status(200).json({message:"Update Successful"})
+        res.status(200).json({message:"Update Status Successful"})
 
     } catch (error) {
         logger.error(`Error: ${error}`)
@@ -101,19 +104,23 @@ export const delProd =  async(req:Request, res:Response)=>{
 
 export const getProduct =async(req:Request, res:Response)=>{
     try {
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers)
+        })
         const page = Math.max(1, Number((req.query.page as string)) || 1);
         const limit = Math.max(1, Number((req.query.limit as string))|| 10);
 
         const skip = (page-1)*limit;
 
-        const available = (req as any).user.role === "ADMIN" ? undefined: ProductStatus.AVAILABLE
+        const available = session?.user.role === "ADMIN" ? undefined: ProductStatus.AVAILABLE
 
         const [getAllProd, totalProduct] = await Promise.all([ prisma.product.findMany({
             skip,
             take: limit,
             orderBy:{
                 name: "asc"
-            }
+            },
+            where:{status:available}
         }), prisma.product.count({where:{status:available}})])
 
         const totalPage = Math.ceil(totalProduct / limit);

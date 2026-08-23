@@ -84,6 +84,7 @@ model Category{
 	name String @unique
 	tag String
 	createAt DateTime @default(now())
+	product Product[]
 }
 
 enum ProductStatus{
@@ -98,11 +99,12 @@ model Product{
 	imageUrl String[]
 	price Int
 	status ProductStatus @default(AVAILABLE)
-	description Json?
+	description Json
 	createAt DateTime @default(now())
 	minimumOrder Int @default(1)
 	productLocation String 
 
+	category Category @relation(fields: [categoryId], references: [id])
 	comment Comment[]
 	cartItem CartItem[]
 	order Order[]
