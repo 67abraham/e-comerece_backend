@@ -52,26 +52,41 @@ export const getCartItem =  async(req:Request, res:Response)=>{
         
         const skip = (page-1)*limit;
     
-                const [getAllCart, totalCart] = await Promise.all([ prisma.cartItem.findMany({
+                const [getAllCart, totalCart, billingAddress] = await Promise.all([ prisma.cartItem.findMany({
                     skip,
                     take: limit,
                    where:{
-                    userId: (req as any).user.id
+                    userId: (req as any).user.id,
+                    ordered: false
+                    
                    },
                    include:{
-                    product: true
+                    product:{
+                        select:{
+                            name:true,
+                            imageUrl:true,
+                            price:true,
+                            description:true,
+                            
+                        }
+                    }
                    }
-                }), prisma.cartItem.count({where:{userId: (req as any).user.id}})])
+                }), prisma.cartItem.count({where:{userId: (req as any).user.id}}),
+                prisma.billingInfo.findMany({
+                    where:{userId:(req as any).user.id}
+                })
+            ])
 
                 const totalPrice = getAllCart.reduce((sum, item)=> sum + (item.product.price * item.quantity), 0)
                 const totalPage = Math.ceil(totalCart / limit);
         
-                logger.info("Delete Product")
+                logger.info("Get Product")
                 res.status(200).json({
                     getAllCart,
                     totalPrice,
                     totalPage,
                     skip,
+                    billingAddress,
                     hasNextPage: page < totalPage,
                     hasPrevPage: page > 1
                 })

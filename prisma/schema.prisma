@@ -107,7 +107,7 @@ model Product{
 	category Category @relation(fields: [categoryId], references: [id])
 	comment Comment[]
 	cartItem CartItem[]
-	order Order[]
+	
 }
 
 model Comment{
@@ -134,21 +134,20 @@ enum OrderStatus {
 model Order{
 	id String @id @default(auto()) @map("_id") @db.ObjectId
 	orderNumber String
-	productId String[] @db.ObjectId
 	status OrderStatus @default(PENDING)
 	item CartItem[]
 	totalAmount Int
 	userId String @db.ObjectId
+	shippingMethod String
 	createAt DateTime @default(now())
-	
-	product Product @relation(fields: [productId], references: [id])
 
 }
 
 model CartItem{
 	id String @id @default(auto()) @map("_id") @db.ObjectId
-	userId String @db.ObjectId
-	productId String @db.ObjectId
+	userId String @db.ObjectId 
+	productId String @db.ObjectId 
+	ordered Boolean @default(false)
 	quantity Int
 	orderId String? @db.ObjectId
 	createAt DateTime @default(now())
@@ -162,6 +161,11 @@ model CartItem{
 model BillingInfo{
 	id String @id @default(auto()) @map("_id") @db.ObjectId
 	userId String @db.ObjectId
-
+	fullName String
+	city String
+	county String
+	currentAddress String
+	contact String
+	country String
 	user User @relation(fields: [userId], references: [id])
 }

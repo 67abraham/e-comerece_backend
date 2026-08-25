@@ -3,6 +3,7 @@ import { logger } from "../../lib/logger";
 import {randomBytes} from 'crypto'
 import { prisma } from "../../lib/prisma";
 import type { OrderStatus } from "../../generated/prisma/enums";
+import { order } from "../routes/route";
 
 
 const generateCode = ()=>{
@@ -12,50 +13,52 @@ const generateCode = ()=>{
 export const createOrder = async(req:Request, res:Response)=>{
     
     try {
-        const {cartID} = req.body as {cartID:string[]}
-        if(cartID.length < 0) return res.status(400).json({message:"Invalid Id"})
+        const {cartID, shippingMethod} = req.body
+        if(cartID.length < 0) return res.status(400).json({message:"No CartItem Found"});
 
-       const getOrderItem = await prisma.cartItem.findMany({
-            where:{
-                id:{in: cartID},
-                userId: (req as any).user.id
-            },
-            include:{
-                product:{
-                    select:{
-                        name:true,
-                        imageUrl:true,
-                        price:true,
-                        productLocation:true
+        const getOrderItem = await prisma.cartItem.findMany({
+                where:{
+                    id:{in: cartID},
+                    userId: (req as any).user.id
+                },
+                include:{
+                    product:{
+                        select:{
+                            name:true,
+                            imageUrl:true,
+                            price:true,
+                            productLocation:true
+                        }
                     }
                 }
-            }
-       })
+        });
+    
+        const totalAmount = getOrderItem.reduce((sum, data)=> sum + (data.product.price * data.quantity),0)
+           
+        const createOr = await prisma.order.create({
+                data:{
+                    orderNumber: generateCode(),
+                    totalAmount,
+                    userId: (req as any).user.id,
+                    shippingMethod
+                },
+    
+        })
 
-       const prods = getOrderItem.map((item)=>item.productId)
-       const totalAmount = getOrderItem.reduce((sum, data)=> sum + (data.product.price * data.quantity),0)
-       const createOr = await prisma.order.create({
-        data:{
-            orderNumber: generateCode(),
-            totalAmount,
-            userId: (req as any).user.id,
-            productId: prods,
-            item:{
-                create: getOrderItem
-            },
-        },
-
-        include:{
-            item: true
-        }
-       });
-
-       await prisma.cartItem.deleteMany({
-        where:{id:{in: cartID}, userId:(req as any).user.id},
-       })
-       logger.info("Order Created")
-       res.status(201).json(createOr)
-
+        const loopCartItem = await Promise.all([
+            getOrderItem.filter((data)=> data.orderId === null).map((d)=>
+                prisma.cartItem.update({
+                    where:{id: d.id},
+                    data:{
+                        orderId:createOr.id,
+                        ordered: true
+                    }
+                })
+            )
+        ]) 
+    
+           logger.info("Order Created")
+           res.status(201).json({message: "Order Created"})
         
     } catch (error) {
         logger.error(`Error: ${error}`)
@@ -103,7 +106,7 @@ export const getOrder = async(req:Request, res:Response)=>{
                             skip,
                             hasNextPage: page < totalPage,
                             hasPrevPage: page > 1
-                        })
+            })
         
     } catch (error) {
        logger.error(`Error: ${error}`) 
