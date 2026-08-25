@@ -45,8 +45,8 @@ export const createOrder = async(req:Request, res:Response)=>{
     
         })
 
-        const loopCartItem = await Promise.all([
-            getOrderItem.filter((data)=> data.orderId === null).map((d)=>
+        const loopCartItem = await Promise.all(
+            getOrderItem.filter((d)=> d.orderId === null).map((d)=>
                 prisma.cartItem.update({
                     where:{id: d.id},
                     data:{
@@ -55,7 +55,7 @@ export const createOrder = async(req:Request, res:Response)=>{
                     }
                 })
             )
-        ]) 
+        ) 
     
            logger.info("Order Created")
            res.status(201).json({message: "Order Created"})
