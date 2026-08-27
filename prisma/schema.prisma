@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url=env("DATABASE_URL")
+}
+
+enum Role{
+	ADMIN
+	APP_USER
+}
+
+model User {
+	id            String    @id @default(auto()) @map("_id") @db.ObjectId
+	email         String    @unique
+	emailVerified Boolean   @default(false)
+	role		  Role @default(APP_USER)
+	name          String?
+	image         String?
+	createdAt     DateTime  @default(now())
+	updatedAt     DateTime  @updatedAt
+	accounts      Account[]
+	sessions      Session[]
+	cartItem 	CartItem[]
+	billingInfo	BillingInfo[]
+	comment Comment[]
+	orders Order[]
+	@@map("user")
+}
+model Session {
+	id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+	token                 String   @unique
+	userId                String  @db.ObjectId
+	expiresAt             DateTime
+	ipAddress             String?
+	userAgent             String?
+	impersonatedBy        String?
+	activeOrganizationId  String?
+	createdAt             DateTime @default(now())
+	updatedAt             DateTime @updatedAt
+	user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	@@map("session")
+}
+model Account {
+	id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+	userId                String    @db.ObjectId
+	accountId             String
+	providerId            String
+	issuer        		  String?
+	accessToken           String?
+	refreshToken          String?
+	accessTokenExpiresAt  DateTime?
+	refreshTokenExpiresAt DateTime?
+	scope                 String?
+	idToken               String?
+	password              String?
+	createdAt             DateTime  @default(now())
+	updatedAt             DateTime  @updatedAt
+	user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+	@@unique([providerId, accountId])
+	@@map("account")
+}
+model Verification {
+	id         String   @id @default(auto()) @map("_id") @db.ObjectId
+	identifier String
+	value      String
+	expiresAt  DateTime
+	createdAt  DateTime @default(now())
+	updatedAt  DateTime @updatedAt
+	@@unique([identifier, value])
+	@@map("verification")
+}
+
+
+model Category{
+	id String @id @default(auto()) @map("_id") @db.ObjectId
+	name String @unique
+	tag String
+	createAt DateTime @default(now())
+	product Product[]
+}
+
+enum ProductStatus{
+	AVAILABLE
+	NOT_AVAILABLE
+}
+
+model Product{
+	id String @id @default(auto()) @map("_id") @db.ObjectId
+	categoryId String @db.ObjectId
+	name String
+	brand String?
+	tags String[] @default([])
+	sizes String[] @default([])
+	colors Json?
+	imageUrl String[]
+	price Float
+	status ProductStatus @default(AVAILABLE)
+	description Json
+	createAt DateTime @default(now())
+	minimumOrder Int @default(1)
+	productLocation String 
+
+	category Category @relation(fields: [categoryId], references: [id])
+	comment Comment[]
+	cartItem CartItem[]
+	
+}
+
+model Comment{
+	id String @id @default(auto()) @map("_id") @db.ObjectId
+	userId String @db.ObjectId
+	productId String @db.ObjectId
+	message Json
+	createAt DateTime @default(now())
+
+	user User @relation(fields: [userId], references: [id])
+	product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order{
+	id String @id @default(auto()) @map("_id") @db.ObjectId
+	orderNumber String @unique
+	status OrderStatus @default(PENDING)
+	item CartItem[]
+	totalAmount Float
+	userId String @db.ObjectId
+	shippingMethod String
+	createAt DateTime @default(now())
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@index([userId, createAt])
+}
+
+model CartItem{
+	id String @id @default(auto()) @map("_id") @db.ObjectId
+	userId String @db.ObjectId 
+	productId String @db.ObjectId 
+	ordered Boolean @default(false)
+	quantity Int
+	selectedColor String?
+	selectedSize String?
+	orderId String? @db.ObjectId
+	unitPrice Float?
+	createAt DateTime @default(now())
+
+	@@index([userId, ordered, createAt])
+	@@index([productId])
+
+	user User @relation(fields: [userId], references: [id])
+	product Product @relation(fields: [productId], references: [id])
+	order Order? @relation(fields: [orderId], references: [id])
+
+}
+
+model BillingInfo{
+	id String @id @default(auto()) @map("_id") @db.ObjectId
+	userId String @db.ObjectId
+	fullName String
+	city String
+	county String
+	currentAddress String
+	contact String
+	country String
+	zipCode String?
+	user User @relation(fields: [userId], references: [id])
+	@@unique([userId])
+}
